@@ -13,18 +13,18 @@
 
 ## 3. Configure Authentication
 
-### Enable OAuth Providers
+### Enable Authentication Providers
 
 1. Go to **Authentication** → **Providers**
-2. Enable **Google**:
+2. Enable **Email**:
+   - Enable **Confirm email** (recommended for production)
+   - Enable **Secure email change**
+   - Under **OTP**, you can use Magic Links (enabled by default)
+
+3. Enable **Google**:
    - Create OAuth credentials in [Google Cloud Console](https://console.cloud.google.com)
    - Set the redirect URL to: `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`
    - Enter your Client ID and Secret in Supabase
-
-3. Enable **Apple** (optional):
-   - Create an App ID and Service ID in [Apple Developer](https://developer.apple.com)
-   - Configure Sign in with Apple
-   - Enter the credentials in Supabase
 
 ### Configure Redirect URLs
 
