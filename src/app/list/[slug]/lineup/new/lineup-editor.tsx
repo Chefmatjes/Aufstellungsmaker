@@ -53,6 +53,12 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
   const canSave = isComplete && teamName.trim() && (!isGuest || creatorName.trim());
 
   const handlePlayerAdd = async (name: string, category: string) => {
+    // Check for duplicates again to be safe
+    if (candidates.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+      setError("Dieser Spieler existiert bereits in der Liste.");
+      return;
+    }
+
     const supabase = createClient();
     
     const { data: newCandidate, error } = await supabase

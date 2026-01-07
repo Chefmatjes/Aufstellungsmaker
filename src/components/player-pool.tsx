@@ -65,6 +65,12 @@ export function PlayerPool({
     const name = newPlayerNames[category]?.trim();
     if (!name || !onPlayerAdd) return;
 
+    // Check for duplicates
+    if (candidates.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+      alert("Dieser Spieler existiert bereits in der Liste.");
+      return;
+    }
+
     setIsAdding(prev => ({ ...prev, [category]: true }));
     try {
       await onPlayerAdd(name, category);

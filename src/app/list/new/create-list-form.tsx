@@ -44,9 +44,11 @@ export function CreateListForm() {
 
     // Check for duplicates
     if (players.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
+      setError(`Spieler "${name}" ist bereits in der Liste`);
       return;
     }
 
+    setError(null);
     setPlayers((prev) => [...prev, { name, category }]);
     setNewPlayerInputs((prev) => ({ ...prev, [category]: "" }));
   };
