@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Plus, Users, Calendar, User, Pencil } from "lucide-react";
+import { ArrowLeft, Plus, Users, Calendar, User, Pencil, Share2 } from "lucide-react";
 import { CopyLinkButton } from "./copy-link-button";
-
-interface PageProps {
+import { ShareScreenshotButton } from "./share-screenshot-button";
+import type { Candidate, CandidateList, Lineup } from "@/lib/database.types";
   params: Promise<{ slug: string }>;
 }
 
@@ -166,8 +166,9 @@ export default async function LineupViewPage({ params }: PageProps) {
               <CardHeader>
                 <CardTitle className="text-base">Aufstellung teilen</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <CopyLinkButton slug={slug} />
+                <ShareScreenshotButton teamName={lineup.team_name} />
               </CardContent>
             </Card>
 

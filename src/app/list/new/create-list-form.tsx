@@ -28,6 +28,7 @@ export function CreateListForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [allowPlayerAdds, setAllowPlayerAdds] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
   const [newPlayerInputs, setNewPlayerInputs] = useState<Record<string, string>>({
     Tor: "",
@@ -113,6 +114,7 @@ export function CreateListForm() {
         title: title.trim(),
         description: description.trim() || null,
         allow_player_adds: allowPlayerAdds,
+        is_public: isPublic,
         share_slug: slug,
       })
       .select()
@@ -187,6 +189,19 @@ export function CreateListForm() {
             />
             <label htmlFor="allowAdds" className="text-sm">
               Andere dürfen Spieler vorschlagen
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isPublic"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+              className="rounded border-input"
+            />
+            <label htmlFor="isPublic" className="text-sm">
+              Öffentlich (für alle sichtbar)
             </label>
           </div>
         </CardContent>

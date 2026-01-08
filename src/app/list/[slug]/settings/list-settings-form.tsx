@@ -21,6 +21,7 @@ export function ListSettingsForm({ list, slug }: ListSettingsFormProps) {
   const [title, setTitle] = useState(list.title);
   const [description, setDescription] = useState(list.description || "");
   const [allowPlayerAdds, setAllowPlayerAdds] = useState(list.allow_player_adds);
+  const [isPublic, setIsPublic] = useState(list.is_public);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +45,7 @@ export function ListSettingsForm({ list, slug }: ListSettingsFormProps) {
         title: title.trim(),
         description: description.trim() || null,
         allow_player_adds: allowPlayerAdds,
+        is_public: isPublic,
       })
       .eq("id", list.id);
 
@@ -136,6 +138,19 @@ export function ListSettingsForm({ list, slug }: ListSettingsFormProps) {
             />
             <label htmlFor="allowAdds" className="text-sm">
               Andere dürfen Spieler vorschlagen
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isPublic"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+              className="rounded border-input"
+            />
+            <label htmlFor="isPublic" className="text-sm">
+              Öffentlich (für alle Nutzer auf dem Dashboard sichtbar)
             </label>
           </div>
 

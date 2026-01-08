@@ -143,6 +143,7 @@ export function FootballField({
   return (
     <div
       ref={fieldRef}
+      id="football-field"
       className={cn(
         "relative w-full aspect-[68/105] football-field rounded-lg overflow-hidden select-none",
         className

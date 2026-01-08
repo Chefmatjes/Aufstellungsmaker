@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS public.candidate_lists (
   description TEXT,
   allow_player_adds BOOLEAN DEFAULT false NOT NULL,
   share_slug TEXT UNIQUE NOT NULL,
+  is_public BOOLEAN DEFAULT false NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );

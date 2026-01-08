@@ -40,6 +40,7 @@ export interface Database {
           description: string | null;
           allow_player_adds: boolean;
           share_slug: string;
+          is_public: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -50,6 +51,7 @@ export interface Database {
           description?: string | null;
           allow_player_adds?: boolean;
           share_slug: string;
+          is_public?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -60,6 +62,7 @@ export interface Database {
           description?: string | null;
           allow_player_adds?: boolean;
           share_slug?: string;
+          is_public?: boolean;
           created_at?: string;
           updated_at?: string;
         };
