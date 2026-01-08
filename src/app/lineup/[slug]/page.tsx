@@ -12,6 +12,8 @@ import { ArrowLeft, Plus, Users, Calendar, User, Pencil, Share2 } from "lucide-r
 import { CopyLinkButton } from "./copy-link-button";
 import { ShareScreenshotButton } from "./share-screenshot-button";
 import type { Candidate, CandidateList, Lineup } from "@/lib/database.types";
+
+interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
