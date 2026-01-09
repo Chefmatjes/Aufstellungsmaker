@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { FootballField, type PlayerPosition } from "@/components/football-field";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, User, Calendar, GraduationCap } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2, User, Calendar, GraduationCap, ListChecks } from "lucide-react";
 import type { Candidate, Lineup, LineupPosition } from "@/lib/database.types";
 
 export interface ComparisonLineup extends Lineup {
@@ -103,14 +104,14 @@ export function ComparisonView({ initialLineups }: ComparisonViewProps) {
         </div>
 
         {loading ? (
-          <div className="aspect-[68/105] flex items-center justify-center bg-muted/50 rounded-lg">
+          <div className="h-[600px] flex items-center justify-center bg-muted/50 rounded-lg">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
         ) : lineup ? (
           <div className="space-y-4">
             <Card>
               <CardContent className="p-2 sm:p-4">
-                <div className="max-w-[280px] mx-auto">
+                <div className="max-w-[500px] mx-auto">
                   <FootballField players={players} readOnly />
                 </div>
               </CardContent>
@@ -119,41 +120,77 @@ export function ComparisonView({ initialLineups }: ComparisonViewProps) {
             <Card>
               <CardHeader className="py-3">
                 <CardTitle className="text-sm flex items-center justify-between">
-                  Details
-                  <Badge variant="outline" className="font-normal">
-                    {players.length} Spieler
+                  Aufstellung Details
+                  <Badge variant="secondary">
+                    {players.length} Spieler gesamt
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="text-sm space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <User className="w-4 h-4" />
-                  <span>von {lineup.profiles?.display_name || "Anonym"}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span>{new Date(lineup.created_at).toLocaleDateString("de-DE")}</span>
+              <CardContent className="text-sm space-y-4">
+                <div className="grid grid-cols-2 gap-2 pb-2 border-b">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <User className="w-4 h-4" />
+                    <span className="truncate">von {lineup.profiles?.display_name || "Anonym"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground justify-end">
+                    <Calendar className="w-4 h-4" />
+                    <span>{new Date(lineup.created_at).toLocaleDateString("de-DE")}</span>
+                  </div>
                 </div>
                 
                 {lineup.trainers && (
-                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-medium">
+                  <div className="flex items-center gap-2 p-2 rounded-md bg-purple-500/10 text-purple-700 dark:text-purple-400 font-medium">
                     <GraduationCap className="w-4 h-4" />
                     <span>Trainer: {lineup.trainers.name}</span>
                   </div>
                 )}
                 
-                {substitutes.length > 0 && (
-                  <div className="pt-2">
-                    <div className="font-medium mb-1">Ersatzspieler:</div>
-                    <div className="flex flex-wrap gap-1">
-                      {substitutes.map(sub => (
-                        <Badge key={sub.id} variant="secondary" className="text-[10px]">
-                          {sub.candidates?.name}
-                        </Badge>
-                      ))}
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 font-medium">
+                    <ListChecks className="w-4 h-4" />
+                    <span>Spielerliste</span>
                   </div>
-                )}
+                  <ScrollArea className="h-[200px] pr-4">
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">Startelf</div>
+                        <div className="space-y-1">
+                          {players.filter(p => p.xPercent < 80).map((p, idx) => (
+                            <div key={p.id} className="flex items-center justify-between py-0.5 border-b border-muted/50 last:border-0 text-xs">
+                              <span className="flex items-center gap-2">
+                                <span className="w-4 text-muted-foreground">{idx + 1}.</span>
+                                <span className="font-medium">{p.name}</span>
+                              </span>
+                              {p.category && (
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
+                                  {p.category}
+                                </Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {substitutes.length > 0 && (
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">Ersatzbank</div>
+                          <div className="space-y-1">
+                            {substitutes.map(sub => (
+                              <div key={sub.id} className="flex items-center justify-between py-0.5 border-b border-muted/50 last:border-0 text-xs italic text-muted-foreground">
+                                <span>{sub.candidates?.name}</span>
+                                {sub.candidates?.category && (
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 opacity-70">
+                                    {sub.candidates?.category}
+                                  </Badge>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
               </CardContent>
             </Card>
           </div>
