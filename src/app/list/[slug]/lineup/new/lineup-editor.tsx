@@ -20,7 +20,8 @@ interface LineupEditorProps {
   userId: string | null;
 }
 
-const MAX_PLAYERS = 11;
+const MAX_FIELD_PLAYERS = 11;
+const MAX_BENCH_PLAYERS = 5;
 
 // Default positions for a 4-3-3 formation
 const defaultPositions = [
@@ -43,13 +44,21 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
   const [teamName, setTeamName] = useState("");
   const [creatorName, setCreatorName] = useState("");
   const [players, setPlayers] = useState<PlayerPosition[]>([]);
+  const [benchPlayers, setBenchPlayers] = useState<PlayerPosition[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isGuest = !userId;
-  const selectedIds = players.map((p) => p.candidateId);
-  const canAddMore = players.length < MAX_PLAYERS;
-  const isComplete = players.length === MAX_PLAYERS;
+  const selectedIds = [...players.map((p) => p.candidateId), ...benchPlayers.map((p) => p.candidateId)];
+  
+  const requiresSubs = list.requires_substitutes;
+  const totalMax = requiresSubs ? (MAX_FIELD_PLAYERS + MAX_BENCH_PLAYERS) : MAX_FIELD_PLAYERS;
+  
+  const canAddMore = selectedIds.length < totalMax;
+  const isComplete = requiresSubs 
+    ? (players.length === MAX_FIELD_PLAYERS && benchPlayers.length === MAX_BENCH_PLAYERS)
+    : players.length === MAX_FIELD_PLAYERS;
+    
   const canSave = isComplete && teamName.trim() && (!isGuest || creatorName.trim());
 
   const handlePlayerAdd = async (name: string, category: string) => {
@@ -61,7 +70,7 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
 
     const supabase = createClient();
     
-    const { data: newCandidate, error } = await supabase
+    const { data: newCandidate, error: addError } = await supabase
       .from("candidates")
       .insert({
         list_id: list.id,
@@ -72,57 +81,96 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
       .select()
       .single();
 
-    if (error) {
-      setError(`Fehler beim Hinzufügen: ${error.message}`);
-      console.error("Full error object:", error);
+    if (addError) {
+      setError(`Fehler beim Hinzufügen: ${addError.message}`);
       return;
     }
 
     if (newCandidate) {
       setCandidates(prev => [...prev, newCandidate]);
+      router.refresh(); 
     }
   };
 
   const handlePlayerSelect = useCallback((candidate: Candidate) => {
     setPlayers((prev) => {
-      if (prev.length >= MAX_PLAYERS) return prev;
-      
-      const positionIndex = prev.length;
-      const position = defaultPositions[positionIndex] || {
-        x: 20 + Math.random() * 60,
-        y: 20 + Math.random() * 60,
-      };
+      if (prev.length < MAX_FIELD_PLAYERS) {
+        const positionIndex = prev.length;
+        const position = defaultPositions[positionIndex] || {
+          x: 20 + Math.random() * 60,
+          y: 20 + Math.random() * 60,
+        };
 
-      return [
-        ...prev,
-        {
-          id: `pos-${Date.now()}-${candidate.id}`,
-          candidateId: candidate.id,
-          name: candidate.name,
-          xPercent: position.x,
-          yPercent: position.y,
-          category: candidate.category,
-        },
-      ];
+        return [
+          ...prev,
+          {
+            id: `pos-${Date.now()}-${candidate.id}`,
+            candidateId: candidate.id,
+            name: candidate.name,
+            xPercent: position.x,
+            yPercent: position.y,
+            category: candidate.category,
+          },
+        ];
+      } else if (requiresSubs && benchPlayers.length < MAX_BENCH_PLAYERS) {
+        setBenchPlayers(prevBench => [
+          ...prevBench,
+          {
+            id: `pos-${Date.now()}-${candidate.id}`,
+            candidateId: candidate.id,
+            name: candidate.name,
+            xPercent: 0,
+            yPercent: 0,
+            category: candidate.category,
+          }
+        ]);
+        return prev;
+      }
+      return prev;
     });
-  }, []);
+  }, [requiresSubs, benchPlayers.length]);
 
   const handlePlayerMove = useCallback(
     (playerId: string, xPercent: number, yPercent: number) => {
+      // If dragged to the bottom of the field, move to bench
+      if (requiresSubs && yPercent > 95) {
+        setPlayers((prev) => {
+          const player = prev.find(p => p.id === playerId);
+          if (player && benchPlayers.length < MAX_BENCH_PLAYERS) {
+            setBenchPlayers(prevBench => [...prevBench, player]);
+            return prev.filter(p => p.id !== playerId);
+          }
+          return prev;
+        });
+        return;
+      }
+
       setPlayers((prev) =>
         prev.map((p) => (p.id === playerId ? { ...p, xPercent, yPercent } : p))
       );
     },
-    []
+    [requiresSubs, benchPlayers.length]
   );
 
   const handlePlayerRemove = useCallback((playerId: string) => {
     setPlayers((prev) => prev.filter((p) => p.id !== playerId));
+    setBenchPlayers((prev) => prev.filter((p) => p.id !== playerId));
   }, []);
+
+  const handleMoveToField = useCallback((player: PlayerPosition) => {
+    if (players.length < MAX_FIELD_PLAYERS) {
+      const positionIndex = players.length;
+      const position = defaultPositions[positionIndex] || { x: 50, y: 50 };
+      
+      setPlayers(prev => [...prev, { ...player, xPercent: position.x, yPercent: position.y }]);
+      setBenchPlayers(prev => prev.filter(p => p.id !== player.id));
+    }
+  }, [players.length]);
 
   const handleReset = useCallback(() => {
     if (confirm("Aufstellung zurücksetzen?")) {
       setPlayers([]);
+      setBenchPlayers([]);
     }
   }, []);
 
@@ -135,8 +183,14 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
       setError("Bitte gib deinen Namen ein");
       return;
     }
-    if (players.length !== MAX_PLAYERS) {
-      setError(`Bitte wähle genau ${MAX_PLAYERS} Spieler aus`);
+    
+    if (requiresSubs) {
+      if (players.length !== MAX_FIELD_PLAYERS || benchPlayers.length !== MAX_BENCH_PLAYERS) {
+        setError(`Bitte wähle 11 Startspieler und 5 Ersatzspieler aus (aktuell: ${players.length} + ${benchPlayers.length})`);
+        return;
+      }
+    } else if (players.length !== MAX_FIELD_PLAYERS) {
+      setError(`Bitte wähle genau ${MAX_FIELD_PLAYERS} Spieler aus`);
       return;
     }
 
@@ -146,12 +200,10 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
     const supabase = createClient();
     const slug = generateSlug(teamName);
 
-    // For guests, we store the creator name in the team_name field with a prefix
     const finalTeamName = isGuest 
       ? `${teamName.trim()} (von ${creatorName.trim()})`
       : teamName.trim();
 
-    // Create the lineup
     const { data: lineup, error: lineupError } = await supabase
       .from("lineups")
       .insert({
@@ -169,8 +221,7 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
       return;
     }
 
-    // Insert all positions
-    const positionsData = players.map((player, index) => ({
+    const fieldPositions = players.map((player, index) => ({
       lineup_id: lineup.id,
       candidate_id: player.candidateId,
       x_percent: player.xPercent,
@@ -179,9 +230,18 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
       order_index: index,
     }));
 
+    const benchPositions = benchPlayers.map((player, index) => ({
+      lineup_id: lineup.id,
+      candidate_id: player.candidateId,
+      x_percent: 0,
+      y_percent: 0,
+      is_substitute: true,
+      order_index: index,
+    }));
+
     const { error: positionsError } = await supabase
       .from("lineup_positions")
-      .insert(positionsData);
+      .insert([...fieldPositions, ...benchPositions]);
 
     if (positionsError) {
       setError(positionsError.message);
@@ -213,9 +273,9 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
             className={isComplete ? "bg-primary" : ""}
           >
             <Users className="w-3 h-3 mr-1" />
-            {players.length} / {MAX_PLAYERS}
+            {selectedIds.length} / {totalMax}
           </Badge>
-          {players.length > 0 && (
+          {(players.length > 0 || benchPlayers.length > 0) && (
             <Button variant="ghost" size="sm" onClick={handleReset}>
               <RotateCcw className="w-4 h-4 mr-1" />
               Zurücksetzen
@@ -237,6 +297,48 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
                   onPlayerRemove={handlePlayerRemove}
                 />
               </div>
+
+              {requiresSubs && (
+                <div className="mt-6 border-t pt-4">
+                  <h3 className="text-sm font-semibold mb-3 flex items-center justify-between">
+                    Ersatzbank
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {benchPlayers.length} / {MAX_BENCH_PLAYERS}
+                    </span>
+                  </h3>
+                  <div className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-lg min-h-[64px]">
+                    {benchPlayers.map((player) => (
+                      <div
+                        key={player.id}
+                        className="relative group cursor-pointer"
+                        onClick={() => handleMoveToField(player)}
+                        title="Auf das Feld schieben"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shadow hover:scale-105 transition-transform">
+                          {player.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                        </div>
+                        <button
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-white rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlayerRemove(player.id);
+                          }}
+                        >
+                          ×
+                        </button>
+                        <div className="mt-1 text-[10px] text-center truncate max-w-[40px]">
+                          {player.name.split(" ").pop()}
+                        </div>
+                      </div>
+                    ))}
+                    {benchPlayers.length === 0 && (
+                      <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground italic">
+                        Ziehe Spieler vom Feld hierher
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -270,10 +372,15 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
                 />
               </div>
 
-              {!isComplete && players.length > 0 && (
+              {!isComplete && selectedIds.length > 0 && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>Wähle noch {MAX_PLAYERS - players.length} Spieler aus</span>
+                  <span>
+                    {requiresSubs 
+                      ? `Noch ${MAX_FIELD_PLAYERS - players.length} Feldspieler und ${MAX_BENCH_PLAYERS - benchPlayers.length} Ersatzspieler wählen`
+                      : `Wähle noch ${MAX_FIELD_PLAYERS - players.length} Spieler aus`
+                    }
+                  </span>
                 </div>
               )}
 
@@ -296,7 +403,7 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
                 ) : (
                   <>
                     <Save className="w-4 h-4 mr-2" />
-                    {isComplete ? "Aufstellung speichern" : `Noch ${MAX_PLAYERS - players.length} Spieler wählen`}
+                    {isComplete ? "Aufstellung speichern" : "Vervollständige die Aufstellung"}
                   </>
                 )}
               </Button>

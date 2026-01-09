@@ -38,6 +38,7 @@ export interface Database {
           owner_id: string;
           title: string;
           description: string | null;
+          requires_substitutes: boolean;
           allow_player_adds: boolean;
           share_slug: string;
           is_public: boolean;
@@ -49,6 +50,7 @@ export interface Database {
           owner_id: string;
           title: string;
           description?: string | null;
+          requires_substitutes?: boolean;
           allow_player_adds?: boolean;
           share_slug: string;
           is_public?: boolean;
@@ -60,6 +62,7 @@ export interface Database {
           owner_id?: string;
           title?: string;
           description?: string | null;
+          requires_substitutes?: boolean;
           allow_player_adds?: boolean;
           share_slug?: string;
           is_public?: boolean;

@@ -47,11 +47,11 @@ export function FootballField({
       
       // New position is start position + delta
       const xPercent = Math.max(5, Math.min(95, dragStartPos.current.playerX + deltaXPercent));
-      const yPercent = Math.max(5, Math.min(95, dragStartPos.current.playerY + deltaYPercent));
+      const yPercent = Math.max(5, Math.min(readOnly ? 95 : 100, dragStartPos.current.playerY + deltaYPercent));
 
       return { xPercent, yPercent };
     },
-    []
+    [readOnly]
   );
 
   const handleDragStart = useCallback(

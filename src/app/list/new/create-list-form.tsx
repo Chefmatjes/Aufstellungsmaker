@@ -27,6 +27,7 @@ export function CreateListForm() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [requiresSubstitutes, setRequiresSubstitutes] = useState(false);
   const [allowPlayerAdds, setAllowPlayerAdds] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
@@ -85,6 +86,11 @@ export function CreateListForm() {
       setError("Bitte gib einen Titel ein");
       return;
     }
+    if (requiresSubstitutes && players.length < 16) {
+      setError("Bitte füge mindestens 16 Spieler hinzu (11 Startspieler + 5 Ersatzspieler)");
+      setIsSaving(false);
+      return;
+    }
     if (players.length === 0) {
       setError("Bitte füge mindestens einen Spieler hinzu");
       return;
@@ -113,6 +119,7 @@ export function CreateListForm() {
         owner_id: user.id,
         title: title.trim(),
         description: description.trim() || null,
+        requires_substitutes: requiresSubstitutes,
         allow_player_adds: allowPlayerAdds,
         is_public: isPublic,
         share_slug: slug,
@@ -177,6 +184,19 @@ export function CreateListForm() {
               placeholder="z.B. Wähle die Top-11 plus 5 Ersatzspieler ab 1990"
               rows={2}
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="requiresSubstitutes"
+              checked={requiresSubstitutes}
+              onChange={(e) => setRequiresSubstitutes(e.target.checked)}
+              className="rounded border-input"
+            />
+            <label htmlFor="requiresSubstitutes" className="text-sm">
+              Ersatzbank fordern (11 + 5 Spieler)
+            </label>
           </div>
 
           <div className="flex items-center gap-2">

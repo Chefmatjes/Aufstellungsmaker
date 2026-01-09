@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Users, Plus, Settings, ArrowLeft } from "lucide-react";
+import { Users, Plus, Settings, ArrowLeft, GitCompare } from "lucide-react";
 import { CopyLinkButton } from "./copy-link-button";
 import type { Candidate } from "@/lib/database.types";
 
@@ -167,6 +167,24 @@ export default async function ListDetailPage({ params }: PageProps) {
                 <CopyLinkButton slug={slug} />
               </CardContent>
             </Card>
+
+            {/* Compare CTA */}
+            {lineups && lineups.length >= 2 && (
+              <Card className="border-emerald-500/20 bg-emerald-500/5">
+                <CardContent className="pt-6">
+                  <h2 className="font-semibold text-lg mb-2">Aufstellungen vergleichen</h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Wähle zwei Aufstellungen aus und vergleiche sie direkt nebeneinander
+                  </p>
+                  <Link href={`/list/${slug}/compare`}>
+                    <Button variant="outline" className="w-full border-emerald-500/30 hover:bg-emerald-500/10">
+                      <GitCompare className="w-4 h-4 mr-2 text-emerald-600" />
+                      Vergleich öffnen
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Recent Lineups */}
             {lineups && lineups.length > 0 && (

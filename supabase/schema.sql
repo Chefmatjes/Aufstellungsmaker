@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS public.candidate_lists (
   owner_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
+  requires_substitutes BOOLEAN DEFAULT false NOT NULL,
   allow_player_adds BOOLEAN DEFAULT false NOT NULL,
   share_slug TEXT UNIQUE NOT NULL,
   is_public BOOLEAN DEFAULT false NOT NULL,
