@@ -5,11 +5,12 @@ import { createClient } from "@/lib/supabase/client";
 import { FootballField, type PlayerPosition } from "@/components/football-field";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, User, Calendar } from "lucide-react";
+import { Loader2, User, Calendar, GraduationCap } from "lucide-react";
 import type { Candidate, Lineup, LineupPosition } from "@/lib/database.types";
 
 export interface ComparisonLineup extends Lineup {
   profiles: { display_name: string | null } | null;
+  trainers: { id: string; name: string } | null;
   lineup_positions?: (LineupPosition & {
     candidates: Candidate | null;
   })[];
@@ -37,6 +38,7 @@ export function ComparisonView({ initialLineups }: ComparisonViewProps) {
       .select(`
         *,
         profiles(display_name),
+        trainers:candidates!lineups_trainer_id_fkey(id, name),
         lineup_positions(
           id,
           candidate_id,
@@ -64,7 +66,6 @@ export function ComparisonView({ initialLineups }: ComparisonViewProps) {
   const transformPositions = (lineup: ComparisonLineup | null): PlayerPosition[] => {
     if (!lineup || !lineup.lineup_positions) return [];
     return lineup.lineup_positions
-      .filter(pos => !pos.is_substitute)
       .map(pos => ({
         id: pos.id,
         candidateId: pos.candidate_id,
@@ -133,6 +134,13 @@ export function ComparisonView({ initialLineups }: ComparisonViewProps) {
                   <Calendar className="w-4 h-4" />
                   <span>{new Date(lineup.created_at).toLocaleDateString("de-DE")}</span>
                 </div>
+                
+                {lineup.trainers && (
+                  <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-medium">
+                    <GraduationCap className="w-4 h-4" />
+                    <span>Trainer: {lineup.trainers.name}</span>
+                  </div>
+                )}
                 
                 {substitutes.length > 0 && (
                   <div className="pt-2">

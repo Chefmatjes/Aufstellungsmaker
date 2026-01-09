@@ -27,7 +27,7 @@ export default async function ComparisonPage({ params }: PageProps) {
   // Fetch all lineups for this list
   const { data: lineups } = await supabase
     .from("lineups")
-    .select("*, profiles(display_name)")
+    .select("*, profiles(display_name), trainers:candidates!lineups_trainer_id_fkey(id, name)")
     .eq("list_id", list.id)
     .order("created_at", { ascending: false });
 
