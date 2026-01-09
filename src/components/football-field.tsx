@@ -48,8 +48,8 @@ export function FootballField({
       const deltaYPercent = (deltaY / rect.height) * 100;
       
       // New position is start position + delta
-      const xPercent = Math.max(5, Math.min(95, dragStartPos.current.playerX + deltaXPercent));
-      const yPercent = Math.max(5, Math.min(readOnly ? 95 : 100, dragStartPos.current.playerY + deltaYPercent));
+      const xPercent = Math.max(2, Math.min(98, dragStartPos.current.playerX + deltaXPercent));
+      const yPercent = Math.max(2, Math.min(readOnly ? 98 : 100, dragStartPos.current.playerY + deltaYPercent));
 
       return { xPercent, yPercent };
     },
@@ -156,7 +156,7 @@ export function FootballField({
       ref={fieldRef}
       id="football-field"
       className={cn(
-        "relative w-full aspect-[68/105] football-field rounded-lg overflow-hidden select-none",
+        "relative w-full aspect-[85/105] football-field rounded-lg overflow-hidden select-none",
         className
       )}
       style={{ touchAction: "none" }}
@@ -164,10 +164,26 @@ export function FootballField({
       {/* Field markings */}
       <svg
         className="absolute inset-0 w-full h-full pointer-events-none"
-        viewBox="0 0 68 105"
+        viewBox="0 0 85 105"
         preserveAspectRatio="none"
       >
-        {/* Outer border */}
+        {/* Bench Area (right 20%) */}
+        <rect x="68" y="0" width="17" height="105" fill="currentColor" className="text-muted-foreground/5" />
+        <line x1="68" y1="0" x2="68" y2="105" stroke="var(--field-lines)" strokeWidth="0.2" strokeDasharray="1,1" />
+        
+        {/* Bench Text */}
+        <text
+          x="76.5"
+          y="52.5"
+          transform="rotate(90, 76.5, 52.5)"
+          textAnchor="middle"
+          fill="var(--field-lines)"
+          className="text-[4px] font-bold tracking-widest opacity-20"
+        >
+          ERSATZBANK
+        </text>
+
+        {/* Outer border pitch */}
         <rect
           x="2"
           y="2"

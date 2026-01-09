@@ -65,8 +65,7 @@ export default async function LineupViewPage({ params }: PageProps) {
   const isCreator = user?.id === lineup.creator_id;
 
   // Transform to PlayerPosition format
-  const fieldPlayers: PlayerPosition[] = (lineup.lineup_positions || [])
-    .filter((pos) => !pos.is_substitute)
+  const allPlayers: PlayerPosition[] = (lineup.lineup_positions || [])
     .sort((a, b) => a.order_index - b.order_index)
     .map((pos) => ({
       id: pos.id,
@@ -77,9 +76,8 @@ export default async function LineupViewPage({ params }: PageProps) {
       category: pos.candidates?.category,
     }));
 
-  const substitutes = (lineup.lineup_positions || [])
-    .filter((pos) => pos.is_substitute)
-    .sort((a, b) => a.order_index - b.order_index);
+  const fieldPlayers = allPlayers.filter(p => p.xPercent < 80);
+  const substitutes = allPlayers.filter(p => p.xPercent >= 80);
 
   const list = lineup.candidate_lists;
   const creator = lineup.profiles;
@@ -126,7 +124,7 @@ export default async function LineupViewPage({ params }: PageProps) {
                 </div>
                 <Badge variant="secondary">
                   <Users className="w-3 h-3 mr-1" />
-                  {fieldPlayers.length} Spieler
+                  {fieldPlayers.length} Feld / {substitutes.length} Bank
                 </Badge>
               </div>
             </div>
@@ -134,13 +132,13 @@ export default async function LineupViewPage({ params }: PageProps) {
             {/* Football Field */}
             <Card>
               <CardContent className="p-2 sm:p-4">
-                <div className="max-w-[280px] sm:max-w-[320px] lg:max-w-[380px] mx-auto">
-                  <FootballField players={fieldPlayers} readOnly />
+                <div className="max-w-[320px] sm:max-w-[380px] lg:max-w-[450px] mx-auto">
+                  <FootballField players={allPlayers} readOnly />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Substitutes */}
+            {/* Substitutes List */}
             {substitutes.length > 0 && (
               <Card>
                 <CardHeader>
@@ -150,7 +148,7 @@ export default async function LineupViewPage({ params }: PageProps) {
                   <div className="flex flex-wrap gap-2">
                     {substitutes.map((pos) => (
                       <Badge key={pos.id} variant="outline" className="text-sm py-1.5">
-                        {pos.candidates?.name || "Unbekannt"}
+                        {pos.name}
                       </Badge>
                     ))}
                   </div>

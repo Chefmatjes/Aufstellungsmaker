@@ -39,12 +39,12 @@ describe('LineupEditor', () => {
 
   it('shows substitute bench when required', () => {
     render(<LineupEditor list={mockList} candidates={mockCandidates} userId="u1" />)
-    expect(screen.getByText('Ersatzbank')).toBeInTheDocument()
+    expect(screen.getByText(/Bank:/)).toBeInTheDocument()
   })
 
   it('hides substitute bench when not required', () => {
     const noSubsList = { ...mockList, requires_substitutes: false }
     render(<LineupEditor list={noSubsList} candidates={mockCandidates} userId="u1" />)
-    expect(screen.queryByText('Ersatzbank')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Bank:/)).not.toBeInTheDocument()
   })
 })

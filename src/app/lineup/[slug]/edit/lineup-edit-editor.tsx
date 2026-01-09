@@ -50,61 +50,56 @@ export function LineupEditEditor({
 }: LineupEditEditorProps) {
   const router = useRouter();
   const [teamName, setTeamName] = useState(lineup.team_name);
-  const [players, setPlayers] = useState<PlayerPosition[]>(existingPositions);
-  const [benchPlayers, setBenchPlayers] = useState<PlayerPosition[]>(existingBenchPositions);
+  const [players, setPlayers] = useState<PlayerPosition[]>([...existingPositions, ...existingBenchPositions]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedIds = [...players.map((p) => p.candidateId), ...benchPlayers.map((p) => p.candidateId)];
+  const selectedIds = players.map((p) => p.candidateId);
   
   const requiresSubs = list.requires_substitutes;
   const totalMax = requiresSubs ? (MAX_FIELD_PLAYERS + MAX_BENCH_PLAYERS) : MAX_FIELD_PLAYERS;
   
+  const fieldPlayersCount = players.filter(p => p.xPercent < 80).length;
+  const benchPlayersCount = players.filter(p => p.xPercent >= 80).length;
+
   const canAddMore = selectedIds.length < totalMax;
   const isComplete = requiresSubs 
-    ? (players.length === MAX_FIELD_PLAYERS && benchPlayers.length === MAX_BENCH_PLAYERS)
-    : players.length === MAX_FIELD_PLAYERS;
+    ? (fieldPlayersCount === MAX_FIELD_PLAYERS && benchPlayersCount === MAX_BENCH_PLAYERS)
+    : fieldPlayersCount === MAX_FIELD_PLAYERS;
     
   const canSave = isComplete && teamName.trim();
 
   const handlePlayerSelect = useCallback((candidate: Candidate) => {
     setPlayers((prev) => {
-      if (prev.length < MAX_FIELD_PLAYERS) {
-        const positionIndex = prev.length;
-        const position = defaultPositions[positionIndex] || {
-          x: 20 + Math.random() * 60,
-          y: 20 + Math.random() * 60,
-        };
+      if (prev.length >= totalMax) return prev;
+      
+      const onField = prev.filter(p => p.xPercent < 80).length;
+      let x = 40;
+      let y = 50;
 
-        return [
-          ...prev,
-          {
-            id: `pos-${Date.now()}-${candidate.id}`,
-            candidateId: candidate.id,
-            name: candidate.name,
-            xPercent: position.x,
-            yPercent: position.y,
-            category: candidate.category,
-          },
-        ];
-      } else if (requiresSubs && benchPlayers.length < MAX_BENCH_PLAYERS) {
-        setBenchPlayers(prevBench => [
-          ...prevBench,
-          {
-            id: `pos-${Date.now()}-${candidate.id}`,
-            candidateId: candidate.id,
-            name: candidate.name,
-            xPercent: 0,
-            yPercent: 0,
-            category: candidate.category,
-          }
-        ]);
-        return prev;
+      if (onField < MAX_FIELD_PLAYERS) {
+        const pos = defaultPositions[onField] || { x: 40, y: 50 };
+        x = pos.x * 0.8;
+        y = pos.y;
+      } else if (requiresSubs) {
+        x = 90;
+        y = 10 + (prev.length - MAX_FIELD_PLAYERS) * 15;
       }
-      return prev;
+
+      return [
+        ...prev,
+        {
+          id: `pos-${Date.now()}-${candidate.id}`,
+          candidateId: candidate.id,
+          name: candidate.name,
+          xPercent: x,
+          yPercent: y,
+          category: candidate.category,
+        },
+      ];
     });
-  }, [requiresSubs, benchPlayers.length]);
+  }, [totalMax, requiresSubs]);
 
   const handlePlayerMove = useCallback(
     (playerId: string, xPercent: number, yPercent: number) => {
@@ -116,41 +111,19 @@ export function LineupEditEditor({
   );
 
   const handlePlayerEndMove = useCallback(
-    (playerId: string, xPercent: number, yPercent: number) => {
-      // If dragged to the bottom of the field, move to bench
-      if (requiresSubs && yPercent > 95) {
-        setPlayers((prev) => {
-          const player = prev.find(p => p.id === playerId);
-          if (player && benchPlayers.length < MAX_BENCH_PLAYERS) {
-            setBenchPlayers(prevBench => [...prevBench, player]);
-            return prev.filter(p => p.id !== playerId);
-          }
-          return prev;
-        });
-      }
+    () => {
+      // Zone switching is handled by xPercent natively now
     },
-    [requiresSubs, benchPlayers.length]
+    []
   );
 
   const handlePlayerRemove = useCallback((playerId: string) => {
     setPlayers((prev) => prev.filter((p) => p.id !== playerId));
-    setBenchPlayers((prev) => prev.filter((p) => p.id !== playerId));
   }, []);
-
-  const handleMoveToField = useCallback((player: PlayerPosition) => {
-    if (players.length < MAX_FIELD_PLAYERS) {
-      const positionIndex = players.length;
-      const position = defaultPositions[positionIndex] || { x: 50, y: 50 };
-      
-      setPlayers(prev => [...prev, { ...player, xPercent: position.x, yPercent: position.y }]);
-      setBenchPlayers(prev => prev.filter(p => p.id !== player.id));
-    }
-  }, [players.length]);
 
   const handleReset = useCallback(() => {
     if (confirm("Aufstellung zurücksetzen?")) {
-      setPlayers(existingPositions);
-      setBenchPlayers(existingBenchPositions);
+      setPlayers([...existingPositions, ...existingBenchPositions]);
       setTeamName(lineup.team_name);
     }
   }, [existingPositions, existingBenchPositions, lineup.team_name]);
@@ -186,11 +159,11 @@ export function LineupEditEditor({
     }
     
     if (requiresSubs) {
-      if (players.length !== MAX_FIELD_PLAYERS || benchPlayers.length !== MAX_BENCH_PLAYERS) {
-        setError(`Bitte wähle 11 Startspieler und 5 Ersatzspieler aus (aktuell: ${players.length} + ${benchPlayers.length})`);
+      if (fieldPlayersCount !== MAX_FIELD_PLAYERS || benchPlayersCount !== MAX_BENCH_PLAYERS) {
+        setError(`Bitte wähle 11 Startspieler und 5 Ersatzspieler aus (aktuell: ${fieldPlayersCount} + ${benchPlayersCount})`);
         return;
       }
-    } else if (players.length !== MAX_FIELD_PLAYERS) {
+    } else if (fieldPlayersCount !== MAX_FIELD_PLAYERS) {
       setError(`Bitte wähle genau ${MAX_FIELD_PLAYERS} Spieler aus`);
       return;
     }
@@ -225,27 +198,18 @@ export function LineupEditEditor({
     }
 
     // Insert new positions
-    const fieldPositions = players.map((player, index) => ({
+    const positionsData = players.map((player, index) => ({
       lineup_id: lineup.id,
       candidate_id: player.candidateId,
       x_percent: player.xPercent,
       y_percent: player.yPercent,
-      is_substitute: false,
-      order_index: index,
-    }));
-
-    const benchPositions = benchPlayers.map((player, index) => ({
-      lineup_id: lineup.id,
-      candidate_id: player.candidateId,
-      x_percent: 0,
-      y_percent: 0,
-      is_substitute: true,
+      is_substitute: player.xPercent >= 80,
       order_index: index,
     }));
 
     const { error: positionsError } = await supabase
       .from("lineup_positions")
-      .insert([...fieldPositions, ...benchPositions]);
+      .insert(positionsData);
 
     if (positionsError) {
       setError(positionsError.message);
@@ -278,8 +242,16 @@ export function LineupEditEditor({
             className={isComplete ? "bg-primary" : ""}
           >
             <Users className="w-3 h-3 mr-1" />
-            {selectedIds.length} / {totalMax}
+            Feld: {fieldPlayersCount} / {MAX_FIELD_PLAYERS}
           </Badge>
+          {requiresSubs && (
+            <Badge 
+              variant={benchPlayersCount === MAX_BENCH_PLAYERS ? "default" : "secondary"}
+              className={benchPlayersCount === MAX_BENCH_PLAYERS ? "bg-primary" : ""}
+            >
+              Bank: {benchPlayersCount} / {MAX_BENCH_PLAYERS}
+            </Badge>
+          )}
           <Button variant="ghost" size="sm" onClick={handleReset}>
             <RotateCcw className="w-4 h-4 mr-1" />
             Zurücksetzen
@@ -293,7 +265,7 @@ export function LineupEditEditor({
         <div className="space-y-4 order-2 lg:order-1">
           <Card>
             <CardContent className="p-2 sm:p-4">
-              <div className="max-w-[280px] sm:max-w-[320px] lg:max-w-[380px] mx-auto">
+              <div className="max-w-[320px] sm:max-w-[380px] lg:max-w-[450px] mx-auto">
                 <FootballField
                   players={players}
                   onPlayerMove={handlePlayerMove}
@@ -301,48 +273,6 @@ export function LineupEditEditor({
                   onPlayerRemove={handlePlayerRemove}
                 />
               </div>
-
-              {requiresSubs && (
-                <div className="mt-6 border-t pt-4">
-                  <h3 className="text-sm font-semibold mb-3 flex items-center justify-between">
-                    Ersatzbank
-                    <span className="text-xs font-normal text-muted-foreground">
-                      {benchPlayers.length} / {MAX_BENCH_PLAYERS}
-                    </span>
-                  </h3>
-                  <div className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-lg min-h-[64px]">
-                    {benchPlayers.map((player) => (
-                      <div
-                        key={player.id}
-                        className="relative group cursor-pointer"
-                        onClick={() => handleMoveToField(player)}
-                        title="Auf das Feld schieben"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shadow hover:scale-105 transition-transform">
-                          {player.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
-                        </div>
-                        <button
-                          className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-white rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePlayerRemove(player.id);
-                          }}
-                        >
-                          ×
-                        </button>
-                        <div className="mt-1 text-[10px] text-center truncate max-w-[40px]">
-                          {player.name.split(" ").pop()}
-                        </div>
-                      </div>
-                    ))}
-                    {benchPlayers.length === 0 && (
-                      <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground italic">
-                        Ziehe Spieler vom Feld hierher
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -366,8 +296,8 @@ export function LineupEditEditor({
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>
                     {requiresSubs 
-                      ? `Noch ${MAX_FIELD_PLAYERS - players.length} Feldspieler und ${MAX_BENCH_PLAYERS - benchPlayers.length} Ersatzspieler wählen`
-                      : `Wähle noch ${MAX_FIELD_PLAYERS - players.length} Spieler aus`
+                      ? `Noch ${MAX_FIELD_PLAYERS - fieldPlayersCount} Feldspieler und ${MAX_BENCH_PLAYERS - benchPlayersCount} Ersatzspieler wählen`
+                      : `Wähle noch ${MAX_FIELD_PLAYERS - fieldPlayersCount} Spieler aus`
                     }
                   </span>
                 </div>
