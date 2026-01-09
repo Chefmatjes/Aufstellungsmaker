@@ -36,7 +36,7 @@ export default async function ListSettingsPage({ params }: PageProps) {
     <div className="min-h-screen">
       <Header />
 
-      <main className="container py-8 max-w-2xl">
+      <main className="container mx-auto py-8 max-w-2xl">
         <ListSettingsForm list={list} slug={slug} />
       </main>
     </div>

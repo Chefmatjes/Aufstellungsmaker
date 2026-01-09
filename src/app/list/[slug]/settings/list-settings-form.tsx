@@ -20,6 +20,8 @@ export function ListSettingsForm({ list, slug }: ListSettingsFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState(list.title);
   const [description, setDescription] = useState(list.description || "");
+  const [requiresSubstitutes, setRequiresSubstitutes] = useState(list.requires_substitutes);
+  const [requiresTrainer, setRequiresTrainer] = useState(list.requires_trainer);
   const [allowPlayerAdds, setAllowPlayerAdds] = useState(list.allow_player_adds);
   const [isPublic, setIsPublic] = useState(list.is_public);
   const [isSaving, setIsSaving] = useState(false);
@@ -44,6 +46,8 @@ export function ListSettingsForm({ list, slug }: ListSettingsFormProps) {
       .update({
         title: title.trim(),
         description: description.trim() || null,
+        requires_substitutes: requiresSubstitutes,
+        requires_trainer: requiresTrainer,
         allow_player_adds: allowPlayerAdds,
         is_public: isPublic,
       })
@@ -126,6 +130,32 @@ export function ListSettingsForm({ list, slug }: ListSettingsFormProps) {
               placeholder="Optionale Beschreibung..."
               rows={3}
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="requiresSubstitutes"
+              checked={requiresSubstitutes}
+              onChange={(e) => setRequiresSubstitutes(e.target.checked)}
+              className="rounded border-input"
+            />
+            <label htmlFor="requiresSubstitutes" className="text-sm">
+              Ersatzbank fordern (11 + 5 Spieler)
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="requiresTrainer"
+              checked={requiresTrainer}
+              onChange={(e) => setRequiresTrainer(e.target.checked)}
+              className="rounded border-input"
+            />
+            <label htmlFor="requiresTrainer" className="text-sm">
+              Trainer-Wahl fordern
+            </label>
           </div>
 
           <div className="flex items-center gap-2">
