@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,8 +11,11 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [mode, setMode] = useState<"login" | "signup">("login");
   const [isLoading, setIsLoading] = useState<"google" | "email" | null>(null);
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -34,27 +38,43 @@ export default function LoginPage() {
     }
   };
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email || !password) return;
 
     setIsLoading("email");
     setError(null);
     setMessage(null);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-
-    if (error) {
-      setError(error.message);
+    
+    if (mode === "signup") {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) {
+        setError(error.message);
+      } else {
+        setMessage("Konto erstellt! Du kannst dich jetzt einloggen.");
+        setMode("login");
+      }
     } else {
-      setMessage("Checke deine E-Mails für den Login-Link!");
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        setError(error.message);
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
     }
+    
     setIsLoading(null);
   };
 
@@ -74,9 +94,13 @@ export default function LoginPage() {
             <div className="w-16 h-16 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-2xl">A</span>
             </div>
-            <CardTitle className="text-2xl">Willkommen zurück</CardTitle>
+            <CardTitle className="text-2xl">
+              {mode === "login" ? "Willkommen zurück" : "Konto erstellen"}
+            </CardTitle>
             <CardDescription>
-              Melde dich an, um deine Aufstellungen zu verwalten
+              {mode === "login" 
+                ? "Melde dich an, um deine Aufstellungen zu verwalten" 
+                : "Erstelle ein Konto, um eigene Listen zu speichern"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
@@ -91,8 +115,9 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleEmailLogin} className="space-y-3">
+            <form onSubmit={handleEmailAuth} className="space-y-3">
               <div className="space-y-2">
+                <label className="text-sm font-medium">E-Mail</label>
                 <Input
                   type="email"
                   placeholder="name@beispiel.de"
@@ -100,6 +125,18 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading !== null}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Passwort</label>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading !== null}
+                  minLength={6}
                 />
               </div>
               <Button
@@ -110,10 +147,22 @@ export default function LoginPage() {
                 {isLoading === "email" ? (
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 ) : (
-                  "Mit E-Mail anmelden"
+                  mode === "login" ? "Einloggen" : "Registrieren"
                 )}
               </Button>
             </form>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setMode(mode === "login" ? "signup" : "login")}
+                className="text-sm text-primary hover:underline"
+              >
+                {mode === "login" 
+                  ? "Noch kein Konto? Hier registrieren" 
+                  : "Bereits ein Konto? Hier einloggen"}
+              </button>
+            </div>
 
             <div className="relative my-6">
               <Separator />
