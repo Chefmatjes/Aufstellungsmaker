@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Plus, Users, Calendar, User, Pencil } from "lucide-react";
+import { ArrowLeft, Plus, Users, Calendar, User, Pencil, GraduationCap } from "lucide-react";
 import { CopyLinkButton } from "./copy-link-button";
 import { ShareScreenshotButton } from "./share-screenshot-button";
 import type { Lineup } from "@/lib/database.types";
@@ -30,6 +30,7 @@ export default async function LineupViewPage({ params }: PageProps) {
       *,
       profiles(display_name, avatar_url),
       candidate_lists(title, share_slug),
+      trainers:candidates!lineups_trainer_id_fkey(id, name),
       lineup_positions(
         id,
         candidate_id,
@@ -51,6 +52,7 @@ export default async function LineupViewPage({ params }: PageProps) {
   const lineup = lineupData as Lineup & {
     profiles: { display_name: string | null; avatar_url: string | null } | null;
     candidate_lists: { title: string; share_slug: string } | null;
+    trainers: { id: string; name: string } | null;
     lineup_positions: {
       id: string;
       candidate_id: string;
@@ -126,6 +128,12 @@ export default async function LineupViewPage({ params }: PageProps) {
                   <Users className="w-3 h-3 mr-1" />
                   {fieldPlayers.length} Feld / {substitutes.length} Bank
                 </Badge>
+                {lineup.trainers && (
+                  <Badge variant="outline" className="bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20">
+                    <GraduationCap className="w-3 h-3 mr-1" />
+                    Trainer: {lineup.trainers.name}
+                  </Badge>
+                )}
               </div>
             </div>
 

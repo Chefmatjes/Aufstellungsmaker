@@ -39,6 +39,7 @@ export interface Database {
           title: string;
           description: string | null;
           requires_substitutes: boolean;
+          requires_trainer: boolean;
           allow_player_adds: boolean;
           share_slug: string;
           is_public: boolean;
@@ -51,6 +52,7 @@ export interface Database {
           title: string;
           description?: string | null;
           requires_substitutes?: boolean;
+          requires_trainer?: boolean;
           allow_player_adds?: boolean;
           share_slug: string;
           is_public?: boolean;
@@ -63,6 +65,7 @@ export interface Database {
           title?: string;
           description?: string | null;
           requires_substitutes?: boolean;
+          requires_trainer?: boolean;
           allow_player_adds?: boolean;
           share_slug?: string;
           is_public?: boolean;
@@ -101,6 +104,7 @@ export interface Database {
           id: string;
           list_id: string;
           creator_id: string | null;
+          trainer_id: string | null;
           team_name: string;
           share_slug: string;
           created_at: string;
@@ -110,6 +114,7 @@ export interface Database {
           id?: string;
           list_id: string;
           creator_id?: string | null;
+          trainer_id?: string | null;
           team_name: string;
           share_slug: string;
           created_at?: string;
@@ -119,6 +124,7 @@ export interface Database {
           id?: string;
           list_id?: string;
           creator_id?: string | null;
+          trainer_id?: string | null;
           team_name?: string;
           share_slug?: string;
           created_at?: string;

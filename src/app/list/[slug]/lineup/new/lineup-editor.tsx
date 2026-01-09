@@ -9,9 +9,9 @@ import { FootballField, type PlayerPosition } from "@/components/football-field"
 import { PlayerPool } from "@/components/player-pool";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Save, Loader2, Users, RotateCcw, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Users, RotateCcw, AlertCircle, GraduationCap } from "lucide-react";
 import type { Candidate, CandidateList } from "@/lib/database.types";
 
 interface LineupEditorProps {
@@ -43,23 +43,28 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
   const [candidates, setCandidates] = useState<Candidate[]>(initialCandidates);
   const [teamName, setTeamName] = useState("");
   const [creatorName, setCreatorName] = useState("");
+  const [selectedTrainerId, setSelectedTrainerId] = useState<string>("");
   const [players, setPlayers] = useState<PlayerPosition[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isGuest = !userId;
+  const trainers = candidates.filter((c) => c.category === "Trainer");
+  const playersPool = candidates.filter((c) => c.category !== "Trainer");
+
   const selectedIds = players.map((p) => p.candidateId);
   
   const requiresSubs = list.requires_substitutes;
+  const requiresTrainer = list.requires_trainer;
   const totalMax = requiresSubs ? (MAX_FIELD_PLAYERS + MAX_BENCH_PLAYERS) : MAX_FIELD_PLAYERS;
   
   const fieldPlayersCount = players.filter(p => p.xPercent < 80).length;
   const benchPlayersCount = players.filter(p => p.xPercent >= 80).length;
 
   const canAddMore = selectedIds.length < totalMax;
-  const isComplete = requiresSubs 
+  const isComplete = (requiresSubs 
     ? (fieldPlayersCount === MAX_FIELD_PLAYERS && benchPlayersCount === MAX_BENCH_PLAYERS)
-    : fieldPlayersCount === MAX_FIELD_PLAYERS;
+    : fieldPlayersCount === MAX_FIELD_PLAYERS) && (!requiresTrainer || selectedTrainerId);
     
   const canSave = isComplete && teamName.trim() && (!isGuest || creatorName.trim());
 
@@ -174,6 +179,11 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
       return;
     }
 
+    if (requiresTrainer && !selectedTrainerId) {
+      setError("Bitte wähle einen Trainer aus");
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
 
@@ -189,6 +199,7 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
       .insert({
         list_id: list.id,
         creator_id: userId,
+        trainer_id: selectedTrainerId || null,
         team_name: finalTeamName,
         share_slug: slug,
       })
@@ -350,9 +361,36 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
           </div>
 
         {/* Player Pool Column */}
-        <div className="order-1 lg:order-2">
+        <div className="order-1 lg:order-2 space-y-4">
+          {requiresTrainer && trainers.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-purple-500" />
+                  Trainer wählen
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <select
+                  value={selectedTrainerId}
+                  onChange={(e) => setSelectedTrainerId(e.target.value)}
+                  className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="" disabled>
+                    Trainer auswählen...
+                  </option>
+                  {trainers.map((trainer) => (
+                    <option key={trainer.id} value={trainer.id}>
+                      {trainer.name}
+                    </option>
+                  ))}
+                </select>
+              </CardContent>
+            </Card>
+          )}
+
           <PlayerPool
-            candidates={candidates}
+            candidates={playersPool}
             selectedIds={selectedIds}
             onPlayerSelect={handlePlayerSelect}
             disabled={!canAddMore}

@@ -59,6 +59,10 @@ export function parsePlayersText(text: string): ParseResult {
     "offense",
     "forward",
     "attack",
+    "trainer",
+    "coach",
+    "lehrer",
+    "übungsleiter",
   ];
 
   for (const line of lines) {

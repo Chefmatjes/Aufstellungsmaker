@@ -28,6 +28,7 @@ export function CreateListForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [requiresSubstitutes, setRequiresSubstitutes] = useState(false);
+  const [requiresTrainer, setRequiresTrainer] = useState(false);
   const [allowPlayerAdds, setAllowPlayerAdds] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
@@ -36,6 +37,7 @@ export function CreateListForm() {
     Abwehr: "",
     Mittelfeld: "",
     Sturm: "",
+    Trainer: "",
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,8 +88,13 @@ export function CreateListForm() {
       setError("Bitte gib einen Titel ein");
       return;
     }
-    if (requiresSubstitutes && players.length < 16) {
+    if (requiresSubstitutes && players.filter(p => p.category !== "Trainer").length < 16) {
       setError("Bitte füge mindestens 16 Spieler hinzu (11 Startspieler + 5 Ersatzspieler)");
+      setIsSaving(false);
+      return;
+    }
+    if (requiresTrainer && players.filter(p => p.category === "Trainer").length === 0) {
+      setError("Bitte füge mindestens einen Trainer hinzu");
       setIsSaving(false);
       return;
     }
@@ -120,6 +127,7 @@ export function CreateListForm() {
         title: title.trim(),
         description: description.trim() || null,
         requires_substitutes: requiresSubstitutes,
+        requires_trainer: requiresTrainer,
         allow_player_adds: allowPlayerAdds,
         is_public: isPublic,
         share_slug: slug,
@@ -202,6 +210,19 @@ export function CreateListForm() {
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
+              id="requiresTrainer"
+              checked={requiresTrainer}
+              onChange={(e) => setRequiresTrainer(e.target.checked)}
+              className="rounded border-input"
+            />
+            <label htmlFor="requiresTrainer" className="text-sm">
+              Trainer-Wahl fordern
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
               id="allowAdds"
               checked={allowPlayerAdds}
               onChange={(e) => setAllowPlayerAdds(e.target.checked)}
@@ -229,7 +250,18 @@ export function CreateListForm() {
 
       {/* Category Cards */}
       <div className="grid sm:grid-cols-2 gap-4">
-        {CATEGORIES.map((category) => {
+        {[
+          ...CATEGORIES,
+          ...(requiresTrainer
+            ? [
+                {
+                  id: "Trainer",
+                  label: "Trainer",
+                  color: "bg-purple-500/20 text-purple-700 dark:text-purple-400",
+                },
+              ]
+            : []),
+        ].map((category) => {
           const categoryPlayers = getPlayersForCategory(category.id);
           return (
             <Card key={category.id}>
