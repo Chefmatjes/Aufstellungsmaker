@@ -48,7 +48,7 @@ export default async function EditLineupPage({ params }: PageProps) {
   const candidates = list?.candidates || [];
 
   // Transform existing positions
-  const existingPositions = ((lineup.lineup_positions as unknown as {
+  const allPositions = ((lineup.lineup_positions as unknown as {
     id: string;
     candidate_id: string;
     x_percent: number;
@@ -65,7 +65,11 @@ export default async function EditLineupPage({ params }: PageProps) {
       xPercent: pos.x_percent,
       yPercent: pos.y_percent,
       category: pos.candidates?.category,
+      isSubstitute: pos.is_substitute,
     }));
+
+  const existingFieldPositions = allPositions.filter(p => !p.isSubstitute);
+  const existingBenchPositions = allPositions.filter(p => p.isSubstitute);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -76,7 +80,8 @@ export default async function EditLineupPage({ params }: PageProps) {
           lineup={lineup as Lineup}
           list={list as CandidateList}
           candidates={candidates as Candidate[]}
-          existingPositions={existingPositions}
+          existingPositions={existingFieldPositions}
+          existingBenchPositions={existingBenchPositions}
           slug={slug}
         />
       </main>

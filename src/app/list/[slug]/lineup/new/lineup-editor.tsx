@@ -132,6 +132,15 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
 
   const handlePlayerMove = useCallback(
     (playerId: string, xPercent: number, yPercent: number) => {
+      setPlayers((prev) =>
+        prev.map((p) => (p.id === playerId ? { ...p, xPercent, yPercent } : p))
+      );
+    },
+    []
+  );
+
+  const handlePlayerEndMove = useCallback(
+    (playerId: string, xPercent: number, yPercent: number) => {
       // If dragged to the bottom of the field, move to bench
       if (requiresSubs && yPercent > 95) {
         setPlayers((prev) => {
@@ -142,12 +151,7 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
           }
           return prev;
         });
-        return;
       }
-
-      setPlayers((prev) =>
-        prev.map((p) => (p.id === playerId ? { ...p, xPercent, yPercent } : p))
-      );
     },
     [requiresSubs, benchPlayers.length]
   );
@@ -294,6 +298,7 @@ export function LineupEditor({ list, candidates: initialCandidates, userId }: Li
                 <FootballField
                   players={players}
                   onPlayerMove={handlePlayerMove}
+                  onPlayerEndMove={handlePlayerEndMove}
                   onPlayerRemove={handlePlayerRemove}
                 />
               </div>

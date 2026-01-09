@@ -15,6 +15,7 @@ export interface PlayerPosition {
 interface FootballFieldProps {
   players: PlayerPosition[];
   onPlayerMove?: (playerId: string, xPercent: number, yPercent: number) => void;
+  onPlayerEndMove?: (playerId: string, xPercent: number, yPercent: number) => void;
   onPlayerRemove?: (playerId: string) => void;
   readOnly?: boolean;
   className?: string;
@@ -23,6 +24,7 @@ interface FootballFieldProps {
 export function FootballField({
   players,
   onPlayerMove,
+  onPlayerEndMove,
   onPlayerRemove,
   readOnly = false,
   className,
@@ -108,6 +110,15 @@ export function FootballField({
     };
 
     const handleEnd = () => {
+      if (draggingId && onPlayerEndMove) {
+        // We need the current position. Since draggingId is just an ID, 
+        // we can't easily get it here without tracking it or searching players.
+        // But players state is current here.
+        const player = players.find(p => p.id === draggingId);
+        if (player) {
+          onPlayerEndMove(draggingId, player.xPercent, player.yPercent);
+        }
+      }
       setDraggingId(null);
       dragStartPos.current = null;
     };
@@ -127,7 +138,7 @@ export function FootballField({
       window.removeEventListener("touchend", handleEnd);
       window.removeEventListener("touchcancel", handleEnd);
     };
-  }, [draggingId, getPositionFromEvent, onPlayerMove]);
+  }, [draggingId, getPositionFromEvent, onPlayerMove, onPlayerEndMove, players]);
 
   // Get category color
   const getCategoryColor = (category?: string | null) => {
