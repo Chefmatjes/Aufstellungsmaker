@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
-import { Share2, Loader2, Image as ImageIcon } from "lucide-react";
+import { Share2, Loader2 } from "lucide-react";
 
 interface ShareScreenshotButtonProps {
   teamName: string;

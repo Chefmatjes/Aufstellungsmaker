@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getUser } from "@/lib/auth";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  Users, 
   Share2, 
   Smartphone, 
   Sparkles, 
@@ -14,7 +14,9 @@ import {
   Image as ImageIcon
 } from "lucide-react";
 
-export default function Home() {
+export default async function Home() {
+  const user = await getUser();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -24,19 +26,27 @@ export default function Home() {
         
         <div className="relative z-10 container mx-auto px-4 py-6">
           <nav className="flex items-center justify-between mb-16">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+            <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2 group">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
                 <span className="text-primary-foreground font-bold text-lg">A</span>
               </div>
               <span className="font-bold text-xl tracking-tight">Aufstellungsmaker</span>
-            </div>
+            </Link>
             <div className="flex items-center gap-3">
-              <Link href="/login">
-                <Button variant="ghost" className="font-medium">Anmelden</Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button className="shadow-lg shadow-primary/20 font-medium">Loslegen</Button>
-              </Link>
+              {user ? (
+                <Link href="/dashboard">
+                  <Button className="shadow-lg shadow-primary/20 font-medium">Zum Dashboard</Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login">
+                    <Button variant="ghost" className="font-medium">Anmelden</Button>
+                  </Link>
+                  <Link href="/dashboard">
+                    <Button className="shadow-lg shadow-primary/20 font-medium">Loslegen</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
 
@@ -190,14 +200,16 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/dashboard">
                   <Button size="lg" className="text-lg px-12 h-14 font-bold shadow-lg shadow-primary/20">
-                    Kostenlos starten
+                    {user ? "Zum Dashboard" : "Kostenlos starten"}
                   </Button>
                 </Link>
-                <Link href="/login">
-                  <Button size="lg" variant="ghost" className="text-lg px-12 h-14">
-                    Konto erstellen
-                  </Button>
-                </Link>
+                {!user && (
+                  <Link href="/login">
+                    <Button size="lg" variant="ghost" className="text-lg px-12 h-14">
+                      Konto erstellen
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -219,7 +231,7 @@ export default function Home() {
           <div className="flex gap-6 text-sm font-medium text-muted-foreground">
             <Link href="/demo" className="hover:text-foreground">Demo</Link>
             <Link href="/dashboard" className="hover:text-foreground">Dashboard</Link>
-            <Link href="/login" className="hover:text-foreground">Login</Link>
+            {!user && <Link href="/login" className="hover:text-foreground">Login</Link>}
           </div>
         </div>
       </footer>

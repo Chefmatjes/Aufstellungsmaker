@@ -1,15 +1,15 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getUser, getProfile } from "@/lib/auth";
+import { getUser } from "@/lib/auth";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Users, Share2, Plus, Copy, Check, Settings, ArrowLeft } from "lucide-react";
+import { Users, Plus, Settings, ArrowLeft } from "lucide-react";
 import { CopyLinkButton } from "./copy-link-button";
-import type { Candidate, CandidateList, Lineup } from "@/lib/database.types";
+import type { Candidate } from "@/lib/database.types";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -39,12 +39,20 @@ export default async function ListDetailPage({ params }: PageProps) {
     .order("name", { ascending: true });
 
   // Fetch lineups for this list
-  const { data: lineups } = await supabase
+  const { data: lineupsData } = await supabase
     .from("lineups")
     .select("*, profiles(display_name)")
     .eq("list_id", list.id)
     .order("created_at", { ascending: false })
     .limit(10);
+
+  const lineups = lineupsData as {
+    id: string;
+    team_name: string;
+    share_slug: string;
+    created_at: string;
+    profiles: { display_name: string | null } | null;
+  }[] | null;
 
   const isOwner = user?.id === list.owner_id;
 
@@ -167,7 +175,7 @@ export default async function ListDetailPage({ params }: PageProps) {
                   <CardTitle className="text-base">Erstellte Aufstellungen</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {lineups.map((lineup: any) => (
+                  {lineups.map((lineup) => (
                     <Link
                       key={lineup.id}
                       href={`/lineup/${lineup.share_slug}`}

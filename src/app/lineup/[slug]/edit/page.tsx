@@ -44,13 +44,21 @@ export default async function EditLineupPage({ params }: PageProps) {
     redirect(`/lineup/${slug}`);
   }
 
-  const list = lineup.candidate_lists as any;
+  const list = lineup.candidate_lists as unknown as CandidateList & { candidates: Candidate[] };
   const candidates = list?.candidates || [];
 
   // Transform existing positions
-  const existingPositions = (lineup.lineup_positions || [])
-    .sort((a: any, b: any) => a.order_index - b.order_index)
-    .map((pos: any) => ({
+  const existingPositions = ((lineup.lineup_positions as unknown as {
+    id: string;
+    candidate_id: string;
+    x_percent: number;
+    y_percent: number;
+    is_substitute: boolean;
+    order_index: number;
+    candidates: { id: string; name: string; category: string | null } | null;
+  }[]) || [])
+    .sort((a, b) => a.order_index - b.order_index)
+    .map((pos) => ({
       id: pos.id,
       candidateId: pos.candidate_id,
       name: pos.candidates?.name || "Unbekannt",

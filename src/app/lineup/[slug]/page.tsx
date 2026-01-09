@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Plus, Users, Calendar, User, Pencil, Share2 } from "lucide-react";
+import { ArrowLeft, Plus, Users, Calendar, User, Pencil } from "lucide-react";
 import { CopyLinkButton } from "./copy-link-button";
 import { ShareScreenshotButton } from "./share-screenshot-button";
-import type { Candidate, CandidateList, Lineup } from "@/lib/database.types";
+import type { Lineup } from "@/lib/database.types";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -23,7 +23,7 @@ export default async function LineupViewPage({ params }: PageProps) {
   const user = await getUser();
 
   // Fetch the lineup with positions and candidates
-  const { data: lineup } = await supabase
+  const { data: lineupData } = await supabase
     .from("lineups")
     .select(
       `
@@ -44,17 +44,31 @@ export default async function LineupViewPage({ params }: PageProps) {
     .eq("share_slug", slug)
     .single();
 
-  if (!lineup) {
+  if (!lineupData) {
     notFound();
   }
+
+  const lineup = lineupData as Lineup & {
+    profiles: { display_name: string | null; avatar_url: string | null } | null;
+    candidate_lists: { title: string; share_slug: string } | null;
+    lineup_positions: {
+      id: string;
+      candidate_id: string;
+      x_percent: number;
+      y_percent: number;
+      is_substitute: boolean;
+      order_index: number;
+      candidates: { id: string; name: string; category: string | null } | null;
+    }[];
+  };
 
   const isCreator = user?.id === lineup.creator_id;
 
   // Transform to PlayerPosition format
   const fieldPlayers: PlayerPosition[] = (lineup.lineup_positions || [])
-    .filter((pos: any) => !pos.is_substitute)
-    .sort((a: any, b: any) => a.order_index - b.order_index)
-    .map((pos: any) => ({
+    .filter((pos) => !pos.is_substitute)
+    .sort((a, b) => a.order_index - b.order_index)
+    .map((pos) => ({
       id: pos.id,
       candidateId: pos.candidate_id,
       name: pos.candidates?.name || "Unbekannt",
@@ -64,11 +78,11 @@ export default async function LineupViewPage({ params }: PageProps) {
     }));
 
   const substitutes = (lineup.lineup_positions || [])
-    .filter((pos: any) => pos.is_substitute)
-    .sort((a: any, b: any) => a.order_index - b.order_index);
+    .filter((pos) => pos.is_substitute)
+    .sort((a, b) => a.order_index - b.order_index);
 
-  const list = lineup.candidate_lists as any;
-  const creator = lineup.profiles as any;
+  const list = lineup.candidate_lists;
+  const creator = lineup.profiles;
 
   return (
     <div className="min-h-screen">
@@ -134,7 +148,7 @@ export default async function LineupViewPage({ params }: PageProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {substitutes.map((pos: any) => (
+                    {substitutes.map((pos) => (
                       <Badge key={pos.id} variant="outline" className="text-sm py-1.5">
                         {pos.candidates?.name || "Unbekannt"}
                       </Badge>

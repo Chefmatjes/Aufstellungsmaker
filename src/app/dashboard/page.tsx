@@ -35,7 +35,7 @@ export default async function DashboardPage() {
     publicLists = publicData || [];
   }
 
-  const ListCard = ({ list, isOwn }: { list: any; isOwn: boolean }) => (
+  const ListCard = ({ list, isOwn }: { list: CandidateList & { profiles?: { display_name: string | null } | null }; isOwn: boolean }) => (
     <Link key={list.id} href={`/list/${list.share_slug}`}>
       <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
         <CardHeader>
